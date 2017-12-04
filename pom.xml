@@ -1,0 +1,112 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>io.truemark</groupId>
+	<artifactId>newrelic-java-client</artifactId>
+	<packaging>jar</packaging>
+	<version>0.0.1-SNAPSHOT</version>
+	<name>newrelic-java-client</name>
+
+	<properties>
+		<!-- Build Settings -->
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+
+		<!--Plugin versions-->
+		<maven-checkstyle-plugin.version>2.17</maven-checkstyle-plugin.version>
+
+		<!-- Dependency Versions -->
+		<jackson.version>2.9.2</jackson.version>
+		<java-commons.version>1.2.1</java-commons.version>
+		<junit.version>4.12</junit.version>
+		<logback.version>1.2.3</logback.version>
+		<lombok.version>1.16.8</lombok.version>
+		<slf4j.version>1.7.21</slf4j.version>
+	</properties>
+	<dependencies>
+		<!-- Keep in alphabetical order by groupId and artifactId -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>${jackson.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.netradius.commons</groupId>
+			<artifactId>java-commons</artifactId>
+			<version>${java-commons.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<version>${lombok.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-checkstyle-plugin</artifactId>
+				<version>${maven-checkstyle-plugin.version}</version>
+				<executions>
+					<execution>
+						<id>validate</id>
+						<phase>validate</phase>
+						<configuration>
+							<configLocation>netradius_checks.xml</configLocation>
+							<encoding>UTF-8</encoding>
+							<sourceDirectory>${project.basedir}/src/</sourceDirectory>
+							<consoleOutput>true</consoleOutput>
+							<failsOnError>true</failsOnError>
+						</configuration>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>com.netradius</groupId>
+						<artifactId>checkstyle-config</artifactId>
+						<version>0.0.2</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+	</build>
+	<distributionManagement>
+		<repository>
+			<id>netradius-releases</id>
+			<name>Netradius Release Repository</name>
+			<url>https://nexus.netradius.net/repository/netradius-releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>netradius-snapshots</id>
+			<name>Netradius Snapshots Repository</name>
+			<url>https://nexus.netradius.net/repository/netradius-snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
+</project>
