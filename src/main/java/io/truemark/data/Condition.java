@@ -20,8 +20,25 @@ public class Condition {
   private String name;
   private Boolean enabled;
   private String metric;
+  @JsonProperty("metric_description")
+  private String metricDescription;
+  @JsonProperty("monitor_id")
+  private String monitorId;
   @JsonProperty("condition_scope")
   private String conditionScope;
   private List<Term> terms;
   private String [] entities;
+  @JsonProperty("violation_close_timer")
+  private String violationCloseTimer;
+  @JsonProperty("external_service_url")
+  private String externalServiceUrl;
+  @JsonProperty("runbook_url")
+  private String runbookUrl;
+  private List<Nrql> nrql;
+  @JsonProperty("value_function")
+  private String valueFunction;
+  private List<Plugin> plugin;
+  @JsonProperty("user_defined")
+  private List<UserDefined> userDefined;
+
 }

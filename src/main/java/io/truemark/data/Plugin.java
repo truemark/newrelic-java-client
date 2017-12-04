@@ -4,12 +4,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 
 /**
- * Holds the Alert Conditions on a policy.
+ * Holds the Plugin data.
  *
  * @author Abhijeet C Kale
  */
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class PolicyAlertCondition {
-  Condition condition;
+public class Plugin {
+
+  private String guid;
+  private String id;
 }
