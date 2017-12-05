@@ -286,7 +286,6 @@ public class URLConnectionRestClient extends JacksonRestClient implements Serial
       conn = setup(HttpMethod.PUT, uri);
       conn.setDoOutput(true);
       conn.setRequestProperty("Content-Type", "application/json");
-      String body2TOBEDELETED = writeValue(o);
 
       if (log.isDebugEnabled()) {
         String body = writeValue(o);
@@ -301,12 +300,14 @@ public class URLConnectionRestClient extends JacksonRestClient implements Serial
       }
 
       in = conn.getInputStream();
-      if (log.isDebugEnabled()) {
-        String res = readString(in);
-        logResponse(conn, res);
-        readValue(res, o);
-      } else {
-        readValue(in, o);
+      String res = readString(in);
+      if (res != null && !res.isEmpty()) {
+        if (log.isDebugEnabled()) {
+          logResponse(conn, res);
+          readValue(res, o);
+        } else {
+          readValue(res, o);
+        }
       }
       return o;
     } catch (IOException x) {

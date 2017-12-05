@@ -10,8 +10,7 @@ import java.util.List;
 /**
  * Bad Request Exception.
  *
- *
- * @author Dilip S Sisodia
+ * @author Abhijeet Kale
  */
 @Data
 @NoArgsConstructor

@@ -3,7 +3,9 @@ package io.truemark.exception;
 import lombok.NoArgsConstructor;
 
 /**
- * @author Erik R. Jensen
+ * Thrown in case there is a problem authenticating to Rest API.
+ *
+ * @author Abhijeet Kale
  */
 @NoArgsConstructor
 public class NewRelicAuthenticationFailedException extends NewRelicException {

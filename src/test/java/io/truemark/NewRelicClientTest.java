@@ -50,7 +50,7 @@ public class NewRelicClientTest {
     try {
       client.restoreAlertConditionStates("Michael Dollar's policy", getConditionStates());
     } catch (NewRelicNotFoundException e) {
-      log.error("Error occurred while testing testDisableAlertConditions. " + e.getMessage(), e);
+      log.error("Error occurred while testing testRestoreAlertConditionStates. " + e.getMessage(), e);
     }
   }
 
@@ -59,8 +59,32 @@ public class NewRelicClientTest {
     try {
       client.getSyntheticStates();
     } catch (NewRelicNotFoundException e) {
-
+      log.error("Error occurred while testing testGetSyntheticStates. " + e.getMessage(), e);
     }
+  }
+
+  @Test
+  public void testDisableSynthetic() {
+    try {
+      client.disableSynthetic("API Test");
+    } catch (NewRelicNotFoundException e) {
+      log.error("Error occurred while testing testDisableSynthetic. " + e.getMessage(), e);
+    }
+  }
+
+  @Test
+  public void testRestoreSyntheticStates() {
+      client.restoreSyntheticStates(getSyntheticStates());
+  }
+
+  private Map<String,Boolean> getSyntheticStates() {
+    Map<String,Boolean> syntheticStates = new HashMap<>();
+    syntheticStates.put("", true);
+    syntheticStates.put("Scripted Browser Test", true);
+    syntheticStates.put("Test", true);
+    syntheticStates.put("API Test", false);
+
+    return syntheticStates;
   }
 
   private Map<String,Boolean> getConditionStates() {

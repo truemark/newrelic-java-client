@@ -22,6 +22,8 @@ public class NewRelicClient implements Serializable {
 
   private static final int OFFSET = 0;
   private static final int LIMIT = 1; // TODO changes this to 20
+  public static final String DISABLED = "DISABLED";
+  public static final String ENABLED = "ENABLED";
   private final String policyUrl;
   private final String syntheticConditionUrl;
   private final String alertConditionsUrl;
@@ -183,12 +185,68 @@ public class NewRelicClient implements Serializable {
     }
   }
 
-  public void disableSynthetic(String syntheticName) {
-
+  public void disableSynthetic(String syntheticName) throws NewRelicNotFoundException {
+    Synthetic synthetic = getSyntheticByName(syntheticName);
+    if (synthetic != null) {
+      updateSynthetic(synthetic, DISABLED);
+    } else {
+      throw new NewRelicNotFoundException("No Synthetic by name : " + syntheticName + " found.");
+    }
   }
 
   public void restoreSyntheticStates(Map <String, Boolean> states) {
+    if (states != null && !states.isEmpty()) {
+      for (String syntheticName : states.keySet()) {
+        Boolean state = states.get(syntheticName);
+        Synthetic synthetic = getSyntheticByName(syntheticName);
+        if (synthetic != null) {
+          String status = state == true ? ENABLED : DISABLED;
+          updateSynthetic(synthetic, status);
+        } else {
+          log.error("Unable to find synthetic by name " + syntheticName);
+        }
+      }
+    }
+  }
 
+  private void updateSynthetic(Synthetic synthetic, String status) {
+    // update the synthetic status
+    synthetic.setStatus(status);
+    try {
+      restClientSynthetic.update(syntheticUrl + "/" + synthetic.getId(), synthetic);
+    } catch (IOException e) {
+      log.error("Error occurred fetching synthetics from New Relic. " + e.getMessage(), e);
+    }
+  }
+
+  private Synthetic getSyntheticByName(String syntheticName) {
+    Integer syntheticCount = getSyntheticCount();
+    Synthetic retSynthetic = null;
+    if (syntheticCount != null && syntheticCount > 0) {
+      int offset = OFFSET;
+      int limit = LIMIT;
+      // first get all Synthetics/Monitors
+      Synthetics synthetics;
+      for (int i = offset; i < syntheticCount; i += LIMIT) {
+        try {
+          synthetics = restClientSynthetic.get(syntheticUrl + "?offset=" + i + "&limit="
+              + limit, Synthetics.class);
+          if (synthetics != null && synthetics.getMonitors() != null && !synthetics.getMonitors().isEmpty()) {
+            List<Synthetic> monitors = synthetics.getMonitors();
+            for (Synthetic synthetic : monitors) {
+              if (synthetic != null && synthetic.getName() != null && synthetic.getName().equalsIgnoreCase(syntheticName)) {
+                retSynthetic = synthetic;
+                break;
+              }
+            }
+          }
+        } catch (IOException e) {
+          log.error("Error occurred fetching synthetics from New Relic. " + e.getMessage(), e);
+        }
+      }
+    }
+
+    return retSynthetic;
   }
 
   private Integer getSyntheticCount() {

@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 /**
  * Not found exception.
  *
- * @author Dilip S Sisodia
+ * @author Abhijeet Kale
  */
 @Data
 @NoArgsConstructor

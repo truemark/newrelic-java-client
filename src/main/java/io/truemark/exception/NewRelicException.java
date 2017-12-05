@@ -5,9 +5,9 @@ import lombok.NoArgsConstructor;
 import java.io.IOException;
 
 /**
- * Base exception class for TrueMark Client.
+ * Base exception class for New Relic Java Client.
  *
- * @author Dilip S Sisodia
+ * @author Abhijeet Kale
  */
 @NoArgsConstructor
 public class NewRelicException extends IOException {

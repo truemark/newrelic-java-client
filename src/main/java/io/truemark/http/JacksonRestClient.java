@@ -1,5 +1,6 @@
 package io.truemark.http;
 
+import com.fasterxml.jackson.core.JsonParser.Feature;
 import com.fasterxml.jackson.databind.InjectableValues;
 import com.fasterxml.jackson.databind.InjectableValues.Std;
 import com.fasterxml.jackson.databind.JavaType;
@@ -31,6 +32,7 @@ public abstract class JacksonRestClient implements RestClient {
     }
     injectableValues = new Std()
         .addValue("restClient", this);
+
   }
 
   protected <T> T readValue(String value, Class<T> clazz) throws IOException {

@@ -3,7 +3,9 @@ package io.truemark.exception;
 import lombok.NoArgsConstructor;
 
 /**
- * @author Erik R. Jensen
+ * Thrown when the user is not allowed an operation.
+ *
+ * @author Abhijeet Kale
  */
 @NoArgsConstructor
 public class NewRelicForbiddenException extends NewRelicException {
