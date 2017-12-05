@@ -8,8 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,11 +20,12 @@ import java.util.Map;
 @Slf4j
 public class NewRelicClient implements Serializable {
 
-  public static final int DEFAULT_TIMEOUT = 3000; // 30 seconds
-//  private final String policyUrl;
-//  private final String syntheticConditionUrl;
+  private static final int OFFSET = 0;
+  private static final int LIMIT = 1; // TODO changes this to 20
+  private final String policyUrl;
+  private final String syntheticConditionUrl;
   private final String alertConditionsUrl;
-//  private final String syntheticUrl;
+  private final String syntheticUrl;
 
   protected RestClient restClientSynthetic;
   protected RestClient restClientAlerts;
@@ -40,15 +41,15 @@ public class NewRelicClient implements Serializable {
    * @param syntheticUrl the URL to use for accessing synthetic condition
    */
   public NewRelicClient(String syntheticConditionUrl, String alertConditionsUrl, String policyUrl,
-                        String syntheticUrl, String apiKey) {
-//    this.policyUrl = policyUrl;
-//    this.syntheticConditionUrl = syntheticConditionUrl;
+                        String syntheticUrl, String restApiKey, String adminApiKey) {
+    this.policyUrl = policyUrl;
+    this.syntheticConditionUrl = syntheticConditionUrl;
     this.alertConditionsUrl = alertConditionsUrl;
-//    this.syntheticUrl = syntheticUrl;
-    restClientSynthetic = new URLConnectionRestClient(syntheticUrl, apiKey);
-    restClientAlerts = new URLConnectionRestClient(alertConditionsUrl, apiKey);
-    restClientPolicy = new URLConnectionRestClient(policyUrl, apiKey);
-    restClientSyntheticCondition = new URLConnectionRestClient(syntheticConditionUrl, apiKey);
+    this.syntheticUrl = syntheticUrl;
+    restClientSynthetic = new URLConnectionRestClient(syntheticUrl, adminApiKey);
+    restClientAlerts = new URLConnectionRestClient(alertConditionsUrl, restApiKey);
+    restClientPolicy = new URLConnectionRestClient(policyUrl, restApiKey);
+    restClientSyntheticCondition = new URLConnectionRestClient(syntheticConditionUrl, restApiKey);
   }
 
   public Map<String, Boolean> getAlertConditionStats(String policyName) throws NewRelicNotFoundException {
@@ -79,8 +80,7 @@ public class NewRelicClient implements Serializable {
               .getConditions().isEmpty()) {
             log.debug("Found alert conditions on policy");
             for (Condition alertCondition: policyAlertConditions.getConditions()) {
-              retStats.put(alertCondition.getName().concat(":").concat(String.valueOf(alertCondition.getId())),
-                  alertCondition.getEnabled());
+              retStats.put(alertCondition.getName(), alertCondition.getEnabled());
             }
           }
         } catch (IOException e) {
@@ -92,16 +92,6 @@ public class NewRelicClient implements Serializable {
       throw new NewRelicNotFoundException("No policies found.");
     }
     return retStats;
-  }
-
-  private Policies getPolicies() {
-    Policies policies = null;
-    try {
-      policies = restClientPolicy.get("", Policies.class);
-    } catch (IOException e) {
-      log.error("Error occurred fetching policies from New Relic. " + e.getMessage(), e);
-    }
-    return policies;
   }
 
   public void disableAlertConditions(String policyName) throws NewRelicNotFoundException {
@@ -126,35 +116,6 @@ public class NewRelicClient implements Serializable {
     } else {
       throw new NewRelicNotFoundException("No policy by name: " + policyName + " found.");
     }
-  }
-
-  private PolicyAlertConditions getPolicyAlertConditions(String policyName, Policy policy) {
-    PolicyAlertConditions  policyAlertConditions = null;
-    try {
-      policyAlertConditions = restClientAlerts.get("?policy_id=" + policy.getId(), PolicyAlertConditions.class);
-    } catch (IOException e) {
-      log.error("Error occurred fetching conditions on the policy  " + policyName + ". " + e.getMessage(), e);
-    }
-    return policyAlertConditions;
-  }
-
-  private Policy getPolicyByName(String policyName) throws NewRelicNotFoundException {
-    // first get all the policies
-    Policies policies = getPolicies();
-    if (policies == null) {
-      throw new NewRelicNotFoundException("No policies found.");
-    }
-    Policy retPolicy = null;
-    if (policies != null && policies.getPolicies() != null && policies.getPolicies().length > 0) {
-      for (Policy policy : policies.getPolicies()) {
-        if (policy.getName().equals(policyName)) {
-          log.debug("Found the policy with Name : " + policyName);
-          retPolicy = policy;
-          break;
-        }
-      }
-    }
-    return retPolicy;
   }
 
   public void restoreAlertConditionStates(String policyName, Map <String, Boolean> states) throws
@@ -189,6 +150,58 @@ public class NewRelicClient implements Serializable {
     }
   }
 
+  public Map <String, Boolean> getSyntheticStates() throws NewRelicNotFoundException {
+    // get the count of monitors
+    // figure out how many calls to make to collect the synthetic data
+    Integer syntheticCount = getSyntheticCount();
+    Map<String, Boolean> retStats;
+    if (syntheticCount == null || syntheticCount == 0) {
+      throw new NewRelicNotFoundException("No Synthetics found .");
+    } else {
+      retStats = new HashMap<>();
+      int offset = OFFSET;
+      int limit = LIMIT;
+      // first get all Synthetics/Monitors
+      Synthetics synthetics;
+      for (int i = offset; i < syntheticCount; i += LIMIT) {
+        try {
+          synthetics = restClientSynthetic.get(syntheticUrl + "?offset=" + i + "&limit="
+              + limit, Synthetics.class);
+          if (synthetics != null && synthetics.getMonitors() != null && !synthetics.getMonitors().isEmpty()) {
+            List<Synthetic> monitors = synthetics.getMonitors();
+            for (Synthetic synthetic : monitors) {
+              if (synthetic != null && synthetic.getName() != null && synthetic.getStatus() != null) {
+                retStats.put(synthetic.getName(), synthetic.getStatus().equalsIgnoreCase("DISABLED"));
+              }
+            }
+          }
+        } catch (IOException e) {
+          log.error("Error occurred fetching synthetics from New Relic. " + e.getMessage(), e);
+        }
+      }
+      return retStats;
+    }
+  }
+
+  public void disableSynthetic(String syntheticName) {
+
+  }
+
+  public void restoreSyntheticStates(Map <String, Boolean> states) {
+
+  }
+
+  private Integer getSyntheticCount() {
+    Synthetics synthetics = null;
+    try {
+      synthetics = restClientSynthetic.get("", Synthetics.class);
+    } catch (IOException e) {
+      log.error("Error occurred fetching synthetics from New Relic. " + e.getMessage(), e);
+    }
+
+    return synthetics != null ? synthetics.getCount() : 0;
+  }
+
   private PolicyAlertCondition getAlertCondition(Policy policy, String condition) {
     PolicyAlertCondition retAlertCondition = null;
     if (policy != null) {
@@ -208,16 +221,43 @@ public class NewRelicClient implements Serializable {
     return retAlertCondition;
   }
 
-  public Map <String, Boolean> getSyntheticStates() {
-
-    return null;
+  private Policies getPolicies() {
+    Policies policies = null;
+    try {
+      policies = restClientPolicy.get("", Policies.class);
+    } catch (IOException e) {
+      log.error("Error occurred fetching policies from New Relic. " + e.getMessage(), e);
+    }
+    return policies;
   }
 
-  public void disableSynthetic() {
-
+  private PolicyAlertConditions getPolicyAlertConditions(String policyName, Policy policy) {
+    PolicyAlertConditions  policyAlertConditions = null;
+    try {
+      policyAlertConditions = restClientAlerts.get("?policy_id=" + policy.getId(), PolicyAlertConditions.class);
+    } catch (IOException e) {
+      log.error("Error occurred fetching conditions on the policy  " + policyName + ". " + e.getMessage(), e);
+    }
+    return policyAlertConditions;
   }
 
-  public void restoreSyntheticStates(Map <String, Boolean> states) {
-
+  private Policy getPolicyByName(String policyName) throws NewRelicNotFoundException {
+    // first get all the policies
+    Policies policies = getPolicies();
+    if (policies == null) {
+      throw new NewRelicNotFoundException("No policies found.");
+    }
+    Policy retPolicy = null;
+    if (policies != null && policies.getPolicies() != null && policies.getPolicies().length > 0) {
+      for (Policy policy : policies.getPolicies()) {
+        if (policy.getName().equals(policyName)) {
+          log.debug("Found the policy with Name : " + policyName);
+          retPolicy = policy;
+          break;
+        }
+      }
+    }
+    return retPolicy;
   }
+
 }

@@ -169,7 +169,7 @@ public class URLConnectionRestClient extends JacksonRestClient implements Serial
       url = this.url + url;
     }
     HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-    conn.setRequestProperty("Accept", "application/vnd.newrelic.v1+json"); // TODO Make constant
+    conn.setRequestProperty("Accept", "application/json");
     conn.setRequestProperty("User-Agent", USER_AGENT);
     conn.setRequestMethod(method.toString());
     conn.setConnectTimeout(120 * 1000); // 2 minutes // TODO Make configurable

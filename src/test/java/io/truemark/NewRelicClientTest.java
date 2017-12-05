@@ -54,6 +54,15 @@ public class NewRelicClientTest {
     }
   }
 
+  @Test
+  public void testGetSyntheticStates() {
+    try {
+      client.getSyntheticStates();
+    } catch (NewRelicNotFoundException e) {
+
+    }
+  }
+
   private Map<String,Boolean> getConditionStates() {
     Map<String,Boolean> conditions = new HashMap<>();
     conditions.put("Apdex (Low) 1", true);
