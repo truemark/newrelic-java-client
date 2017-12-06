@@ -103,18 +103,20 @@ public class IntegrationTestHelper {
       String policyUrl = config.getProperty("policy.rest.base.url");
       ValidationHelper.checkForEmpty(policyUrl);
       String syntheticUrl = config.getProperty("synthetic.rest.base.url");
-      ValidationHelper.checkForEmpty(syntheticConditionsUrl);
+      ValidationHelper.checkForEmpty(syntheticUrl);
       String nrqlUrl = config.getProperty("nrql.rest.base.url");
       ValidationHelper.checkForEmpty(nrqlUrl);
       String alertExternalServicesUrl = config.getProperty("alert.external.services.rest.base.url");
       ValidationHelper.checkForEmpty(alertExternalServicesUrl);
+      String pluginsUrl = config.getProperty("plugins.rest.base.url");
+      ValidationHelper.checkForEmpty(pluginsUrl);
       String restApiKey = config.getProperty("rest.api.key");
       ValidationHelper.checkForEmpty(restApiKey);
       String adminApiKey = config.getProperty("admin.api.key");
       ValidationHelper.checkForEmpty(adminApiKey);
 
       newRelicClient = new NewRelicClient(syntheticConditionsUrl, alertConditionUrl, policyUrl,
-          syntheticUrl, nrqlUrl, alertExternalServicesUrl, restApiKey, adminApiKey);
+          syntheticUrl, nrqlUrl, alertExternalServicesUrl, pluginsUrl, restApiKey, adminApiKey);
     }
   }
 

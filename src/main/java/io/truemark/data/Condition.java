@@ -36,7 +36,7 @@ public class Condition {
   private String runbookUrl;
   @JsonProperty("value_function")
   private String valueFunction;
-  private List<Plugin> plugin;
+  private Plugin plugin;
   @JsonProperty("user_defined")
   private List<UserDefined> userDefined;
   private Nrql nrql;

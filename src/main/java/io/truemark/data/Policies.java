@@ -12,6 +12,6 @@ import lombok.Data;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Policies {
 
-  Policy policies [];
+  Policy [] policies;
 
 }

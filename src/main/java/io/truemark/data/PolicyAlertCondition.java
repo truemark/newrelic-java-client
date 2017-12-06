@@ -20,4 +20,6 @@ public class PolicyAlertCondition {
   Condition nrqlCondition;
   @JsonProperty("external_service_condition")
   Condition externalServiceCondition;
+  @JsonProperty("plugins_condition")
+  Condition pluginCondition;
 }
