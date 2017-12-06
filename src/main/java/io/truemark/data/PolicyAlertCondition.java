@@ -16,4 +16,6 @@ public class PolicyAlertCondition {
   Condition condition;
   @JsonProperty("synthetics_condition")
   Condition syntheticsCondition;
+  @JsonProperty("nrql_condition")
+  Condition nrqlCondition;
 }

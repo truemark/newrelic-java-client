@@ -104,13 +104,15 @@ public class IntegrationTestHelper {
       ValidationHelper.checkForEmpty(policyUrl);
       String syntheticUrl = config.getProperty("synthetic.rest.base.url");
       ValidationHelper.checkForEmpty(syntheticConditionsUrl);
+      String nrqlUrl = config.getProperty("nrql.rest.base.url");
+      ValidationHelper.checkForEmpty(nrqlUrl);
       String restApiKey = config.getProperty("rest.api.key");
       ValidationHelper.checkForEmpty(restApiKey);
       String adminApiKey = config.getProperty("admin.api.key");
       ValidationHelper.checkForEmpty(adminApiKey);
 
       newRelicClient = new NewRelicClient(syntheticConditionsUrl, alertConditionUrl, policyUrl,
-          syntheticUrl, restApiKey, adminApiKey);
+          syntheticUrl, nrqlUrl, restApiKey, adminApiKey);
     }
   }
 

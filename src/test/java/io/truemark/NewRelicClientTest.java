@@ -93,6 +93,7 @@ public class NewRelicClientTest {
     conditions.put("Apdex (Low) 2", true);
     conditions.put("Deadlocked threads (Low)", true);
     conditions.put("Check failure", true);
+    conditions.put("NRQL Condition1", true);
 
     return conditions;
   }

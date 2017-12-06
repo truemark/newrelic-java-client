@@ -34,11 +34,11 @@ public class Condition {
   private String externalServiceUrl;
   @JsonProperty("runbook_url")
   private String runbookUrl;
-  private List<Nrql> nrql;
   @JsonProperty("value_function")
   private String valueFunction;
   private List<Plugin> plugin;
   @JsonProperty("user_defined")
   private List<UserDefined> userDefined;
+  private Nrql nrql;
 
 }

@@ -34,31 +34,36 @@ public class NewRelicClient implements Serializable {
   private final String syntheticConditionUrl;
   private final String alertConditionsUrl;
   private final String syntheticUrl;
-
+  private final String nrqlUrl;
   protected RestClient restClientSynthetic;
   protected RestClient restClientAlerts;
   protected RestClient restClientPolicy;
   protected RestClient restClientSyntheticCondition;
+  protected RestClient restClientNrql;
 
   /**
    * Creates a new instance of the client using the given url.
    *
    * @param syntheticConditionUrl the URL to use for accessing synthetic conditions
    * @param alertConditionsUrl    the URL to use for accessing alert conditions
+   * @param policyUrl             the URL to use for policy api
    * @param syntheticUrl          the URL to use for accessing the monitors api
+   * @param nrqlUrl               the URL to use for accessing the NRQL api
    * @param restApiKey            the rest api key for New Relic account
    * @param adminApiKey           the admin api key for New Relic account
    */
   public NewRelicClient(String syntheticConditionUrl, String alertConditionsUrl, String policyUrl,
-                        String syntheticUrl, String restApiKey, String adminApiKey) {
+                        String syntheticUrl, String nrqlUrl, String restApiKey, String adminApiKey) {
     this.policyUrl = policyUrl;
     this.syntheticConditionUrl = syntheticConditionUrl;
     this.alertConditionsUrl = alertConditionsUrl;
     this.syntheticUrl = syntheticUrl;
+    this.nrqlUrl = nrqlUrl;
     restClientSynthetic = new URLConnectionRestClient(syntheticUrl, adminApiKey);
     restClientAlerts = new URLConnectionRestClient(alertConditionsUrl, restApiKey);
     restClientPolicy = new URLConnectionRestClient(policyUrl, restApiKey);
     restClientSyntheticCondition = new URLConnectionRestClient(syntheticConditionUrl, adminApiKey);
+    restClientNrql = new URLConnectionRestClient(nrqlUrl, restApiKey);
   }
 
   /**
@@ -89,6 +94,7 @@ public class NewRelicClient implements Serializable {
         retStats = new HashMap<>();
         getAlertConditions(policyName, policyId, retStats);
         getSyntheticConditions(policyName, policyId, retStats);
+        getNrqlConditions(policyName, policyId, retStats);
       }
     } else {
       throw new NewRelicNotFoundException("No policies found.");
@@ -109,43 +115,10 @@ public class NewRelicClient implements Serializable {
       disableAlertConditions(policyName, policyAlertConditions);
       policyAlertConditions = getSyntheticConditions(policyName, policy);
       disableSyntheticConditions(policyName, policyAlertConditions);
+      policyAlertConditions = getNrqlConditions(policyName, policy);
+      disableNrqlConditions(policyName, policyAlertConditions);
     } else {
       throw new NewRelicNotFoundException("No policy by name: " + policyName + " found.");
-    }
-  }
-
-  private void disableSyntheticConditions(String policyName, PolicyAlertConditions policyAlertConditions) {
-    if (policyAlertConditions != null && policyAlertConditions.getSyntheticsConditions() != null
-        && !policyAlertConditions.getSyntheticsConditions().isEmpty()) {
-      for (Condition alertCondition : policyAlertConditions.getSyntheticsConditions()) {
-        alertCondition.setEnabled(false);
-        try {
-          PolicyAlertCondition policyAlertCondition = new PolicyAlertCondition();
-          policyAlertCondition.setSyntheticsCondition(alertCondition);
-          restClientSyntheticCondition.update(syntheticConditionUrl + "/" + alertCondition.getId() + ".json",
-              policyAlertCondition);
-        } catch (IOException e) {
-          log.error("Error occurred updating alert synthetic condition: " + alertCondition.getName()
-              + " on the policy  " + policyName + ". " + e.getMessage(), e);
-        }
-      }
-    }
-  }
-
-  private void disableAlertConditions(String policyName, PolicyAlertConditions policyAlertConditions) {
-    if (policyAlertConditions != null && policyAlertConditions.getConditions() != null
-        && !policyAlertConditions.getConditions().isEmpty()) {
-      for (Condition alertCondition : policyAlertConditions.getConditions()) {
-        alertCondition.setEnabled(false);
-        try {
-          PolicyAlertCondition policyAlertCondition = new PolicyAlertCondition();
-          policyAlertCondition.setCondition(alertCondition);
-          restClientAlerts.update(alertCondition.getId() + ".json", policyAlertCondition);
-        } catch (IOException e) {
-          log.error("Error occurred updating alert condition: " + alertCondition.getName()
-              + " on the policy  " + policyName + ". " + e.getMessage(), e);
-        }
-      }
     }
   }
 
@@ -167,45 +140,10 @@ public class NewRelicClient implements Serializable {
       if (states != null && !states.isEmpty()) {
         restoreAlertConditions(policyName, states, policy);
         restoreSyntheticConditions(policyName, states, policy);
+        restoreNrqlConditions(policyName, states, policy);
       }
     } else {
       throw new NewRelicNotFoundException("No policy by name: " + policyName + " found.");
-    }
-  }
-
-  private void restoreSyntheticConditions(String policyName, Map<String, Boolean> states, Policy policy) {
-    for (String condition : states.keySet()) {
-      Boolean state = states.get(condition);
-      // update the condition with the state
-      PolicyAlertCondition syntheticCondition = getSyntheticCondition(policy, condition);
-      if (syntheticCondition != null && syntheticCondition.getSyntheticsCondition() != null) {
-        syntheticCondition.getSyntheticsCondition().setEnabled(state);
-        try {
-          restClientSyntheticCondition.update(syntheticConditionUrl + "/"
-                  + syntheticCondition.getSyntheticsCondition().getId() + ".json", syntheticCondition);
-        } catch (IOException e) {
-          log.error("Error occurred restoring synthetic state on the policy  " + policyName
-              + " for condition  " + condition + " ." + e.getMessage(), e);
-        }
-      }
-    }
-  }
-
-  private void restoreAlertConditions(String policyName, Map<String, Boolean> states, Policy policy) {
-    for (String condition : states.keySet()) {
-      Boolean state = states.get(condition);
-      // update the condition with the state
-      PolicyAlertCondition alertCondition = getAlertCondition(policy, condition);
-      if (alertCondition != null && alertCondition.getCondition() != null) {
-        alertCondition.getCondition().setEnabled(state);
-        try {
-          restClientAlerts.update(alertConditionsUrl + alertCondition.getCondition().getId()
-              + ".json", alertCondition);
-        } catch (IOException e) {
-          log.error("Error occurred restoring state on the policy  " + policyName
-              + " for condition  " + condition + " ." + e.getMessage(), e);
-        }
-      }
     }
   }
 
@@ -354,12 +292,31 @@ public class NewRelicClient implements Serializable {
     PolicyAlertCondition retAlertCondition = null;
     if (policy != null) {
       PolicyAlertConditions policyAlertConditions = getSyntheticConditions(policy.getName(), policy);
-      if (policyAlertConditions != null && policyAlertConditions.getSyntheticsConditions() != null && !policyAlertConditions
-          .getSyntheticsConditions().isEmpty()) {
+      if (policyAlertConditions != null && policyAlertConditions.getSyntheticsConditions() != null
+          && !policyAlertConditions.getSyntheticsConditions().isEmpty()) {
         for (Condition alertCondition : policyAlertConditions.getSyntheticsConditions()) {
           if (alertCondition.getName().equalsIgnoreCase(condition)) {
             retAlertCondition = new PolicyAlertCondition();
             retAlertCondition.setSyntheticsCondition(alertCondition);
+            break;
+          }
+        }
+      }
+    }
+
+    return retAlertCondition;
+  }
+
+  private PolicyAlertCondition getNrqlCondition(Policy policy, String condition) {
+    PolicyAlertCondition retAlertCondition = null;
+    if (policy != null) {
+      PolicyAlertConditions policyAlertConditions = getNrqlConditions(policy.getName(), policy);
+      if (policyAlertConditions != null && policyAlertConditions.getNrqlConditions() != null
+          && !policyAlertConditions.getNrqlConditions().isEmpty()) {
+        for (Condition alertCondition : policyAlertConditions.getNrqlConditions()) {
+          if (alertCondition.getName().equalsIgnoreCase(condition)) {
+            retAlertCondition = new PolicyAlertCondition();
+            retAlertCondition.setNrqlCondition(alertCondition);
             break;
           }
         }
@@ -393,6 +350,17 @@ public class NewRelicClient implements Serializable {
     PolicyAlertConditions policyAlertConditions = null;
     try {
       policyAlertConditions = restClientSyntheticCondition.get(syntheticConditionUrl + ".json?policy_id="
+          + policy.getId(), PolicyAlertConditions.class);
+    } catch (IOException e) {
+      log.error("Error occurred fetching conditions on the policy  " + policyName + ". " + e.getMessage(), e);
+    }
+    return policyAlertConditions;
+  }
+
+  private PolicyAlertConditions getNrqlConditions(String policyName, Policy policy) {
+    PolicyAlertConditions policyAlertConditions = null;
+    try {
+      policyAlertConditions = restClientNrql.get(nrqlUrl + ".json?policy_id="
           + policy.getId(), PolicyAlertConditions.class);
     } catch (IOException e) {
       log.error("Error occurred fetching conditions on the policy  " + policyName + ". " + e.getMessage(), e);
@@ -454,6 +422,132 @@ public class NewRelicClient implements Serializable {
     } catch (IOException e) {
       log.error("Error occurred fetching conditions on the policy  " + policyName + ". "
           + e.getMessage(), e);
+    }
+  }
+
+  private void getNrqlConditions(String policyName, Integer policyId, Map<String, Boolean> retStats) {
+    PolicyAlertConditions policyAlertConditions;
+    // find the statistics on the policy
+    try {
+      policyAlertConditions = restClientNrql.get(nrqlUrl + ".json?policy_id=" + policyId,
+          PolicyAlertConditions.class);
+      if (policyAlertConditions != null && policyAlertConditions.getNrqlConditions() != null
+          && !policyAlertConditions.getNrqlConditions().isEmpty()) {
+        log.debug("Found alert conditions on policy");
+        for (Condition alertCondition : policyAlertConditions.getNrqlConditions()) {
+          retStats.put(alertCondition.getName(), alertCondition.getEnabled());
+        }
+      }
+    } catch (IOException e) {
+      log.error("Error occurred fetching conditions on the policy  " + policyName + ". "
+          + e.getMessage(), e);
+    }
+  }
+
+  private void disableSyntheticConditions(String policyName, PolicyAlertConditions policyAlertConditions) {
+    if (policyAlertConditions != null && policyAlertConditions.getSyntheticsConditions() != null
+        && !policyAlertConditions.getSyntheticsConditions().isEmpty()) {
+      for (Condition alertCondition : policyAlertConditions.getSyntheticsConditions()) {
+        alertCondition.setEnabled(false);
+        try {
+          PolicyAlertCondition policyAlertCondition = new PolicyAlertCondition();
+          policyAlertCondition.setSyntheticsCondition(alertCondition);
+          restClientSyntheticCondition.update(syntheticConditionUrl + "/" + alertCondition.getId() + ".json",
+              policyAlertCondition);
+        } catch (IOException e) {
+          log.error("Error occurred updating Synthetic Alert condition: " + alertCondition.getName()
+              + " on the policy  " + policyName + ". " + e.getMessage(), e);
+        }
+      }
+    }
+  }
+
+  private void disableNrqlConditions(String policyName, PolicyAlertConditions policyAlertConditions) {
+    if (policyAlertConditions != null && policyAlertConditions.getNrqlConditions() != null
+        && !policyAlertConditions.getNrqlConditions().isEmpty()) {
+      for (Condition nrqlCondition : policyAlertConditions.getNrqlConditions()) {
+        nrqlCondition.setEnabled(false);
+        try {
+          PolicyAlertCondition policyAlertCondition = new PolicyAlertCondition();
+          policyAlertCondition.setNrqlCondition(nrqlCondition);
+          restClientNrql.update(nrqlUrl + "/" + nrqlCondition.getId() + ".json",
+              policyAlertCondition);
+        } catch (IOException e) {
+          log.error("Error occurred updating NRQL Alert condition: " + nrqlCondition.getName()
+              + " on the policy  " + policyName + ". " + e.getMessage(), e);
+        }
+      }
+    }
+  }
+
+  private void disableAlertConditions(String policyName, PolicyAlertConditions policyAlertConditions) {
+    if (policyAlertConditions != null && policyAlertConditions.getConditions() != null
+        && !policyAlertConditions.getConditions().isEmpty()) {
+      for (Condition alertCondition : policyAlertConditions.getConditions()) {
+        alertCondition.setEnabled(false);
+        try {
+          PolicyAlertCondition policyAlertCondition = new PolicyAlertCondition();
+          policyAlertCondition.setCondition(alertCondition);
+          restClientAlerts.update(alertCondition.getId() + ".json", policyAlertCondition);
+        } catch (IOException e) {
+          log.error("Error occurred updating alert condition: " + alertCondition.getName()
+              + " on the policy  " + policyName + ". " + e.getMessage(), e);
+        }
+      }
+    }
+  }
+
+  private void restoreSyntheticConditions(String policyName, Map<String, Boolean> states, Policy policy) {
+    for (String condition : states.keySet()) {
+      Boolean state = states.get(condition);
+      // update the condition with the state
+      PolicyAlertCondition syntheticCondition = getSyntheticCondition(policy, condition);
+      if (syntheticCondition != null && syntheticCondition.getSyntheticsCondition() != null) {
+        syntheticCondition.getSyntheticsCondition().setEnabled(state);
+        try {
+          restClientSyntheticCondition.update(syntheticConditionUrl + "/"
+              + syntheticCondition.getSyntheticsCondition().getId() + ".json", syntheticCondition);
+        } catch (IOException e) {
+          log.error("Error occurred restoring synthetic state on the policy  " + policyName
+              + " for condition  " + condition + " ." + e.getMessage(), e);
+        }
+      }
+    }
+  }
+
+  private void restoreNrqlConditions(String policyName, Map<String, Boolean> states, Policy policy) {
+    for (String condition : states.keySet()) {
+      Boolean state = states.get(condition);
+      // update the condition with the state
+      PolicyAlertCondition nrqlCondition = getNrqlCondition(policy, condition);
+      if (nrqlCondition != null && nrqlCondition.getNrqlCondition() != null) {
+        nrqlCondition.getNrqlCondition().setEnabled(state);
+        try {
+          restClientNrql.update(nrqlUrl + "/"
+              + nrqlCondition.getNrqlCondition().getId() + ".json", nrqlCondition);
+        } catch (IOException e) {
+          log.error("Error occurred restoring synthetic state on the policy  " + policyName
+              + " for condition  " + condition + " ." + e.getMessage(), e);
+        }
+      }
+    }
+  }
+
+  private void restoreAlertConditions(String policyName, Map<String, Boolean> states, Policy policy) {
+    for (String condition : states.keySet()) {
+      Boolean state = states.get(condition);
+      // update the condition with the state
+      PolicyAlertCondition alertCondition = getAlertCondition(policy, condition);
+      if (alertCondition != null && alertCondition.getCondition() != null) {
+        alertCondition.getCondition().setEnabled(state);
+        try {
+          restClientAlerts.update(alertConditionsUrl + alertCondition.getCondition().getId()
+              + ".json", alertCondition);
+        } catch (IOException e) {
+          log.error("Error occurred restoring state on the policy  " + policyName
+              + " for condition  " + condition + " ." + e.getMessage(), e);
+        }
+      }
     }
   }
 }
