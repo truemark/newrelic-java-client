@@ -20,4 +20,6 @@ public class PolicyAlertConditions {
   List<Condition> syntheticsConditions;
   @JsonProperty("nrql_conditions")
   List<Condition> nrqlConditions;
+  @JsonProperty("external_service_conditions")
+  List<Condition> externalServiceConditions;
 }
