@@ -30,7 +30,7 @@ public class NewRelicClientTest {
   @Test
   public void testGetAlertConditionsStats() {
     try {
-      client.getAlertConditionStats("Michael Dollar's policy");
+      client.getAlertConditionStats("Test");
     } catch (NewRelicNotFoundException e) {
       log.error("Error occurred while testing getAlertConditionStats. " + e.getMessage(), e);
     }
@@ -39,7 +39,7 @@ public class NewRelicClientTest {
   @Test
   public void testDisableAlertConditions() {
     try {
-      client.disableAlertConditions("Michael Dollar's policy");
+      client.disableAlertConditions("Test");
     } catch (NewRelicNotFoundException e) {
       log.error("Error occurred while testing testDisableAlertConditions. " + e.getMessage(), e);
     }
@@ -48,7 +48,7 @@ public class NewRelicClientTest {
   @Test
   public void testRestoreAlertConditionStates() {
     try {
-      client.restoreAlertConditionStates("Michael Dollar's policy", getConditionStates());
+      client.restoreAlertConditionStates("Test", getConditionStates());
     } catch (NewRelicNotFoundException e) {
       log.error("Error occurred while testing testRestoreAlertConditionStates. " + e.getMessage(), e);
     }
