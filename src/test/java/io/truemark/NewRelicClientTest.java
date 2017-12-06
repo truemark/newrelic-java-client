@@ -89,7 +89,7 @@ public class NewRelicClientTest {
 
   private Map<String,Boolean> getConditionStates() {
     Map<String,Boolean> conditions = new HashMap<>();
-    conditions.put("Apdex (Low) 1", true);
+    conditions.put("Apdex (Low)", true);
     conditions.put("Apdex (Low) 2", true);
     conditions.put("Deadlocked threads (Low)", true);
     conditions.put("Check failure", true);
