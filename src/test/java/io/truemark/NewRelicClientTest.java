@@ -31,7 +31,12 @@ public class NewRelicClientTest {
   public void testGetAlertConditionsStats() {
     try {
       log.info("Running testGetAlertConditionsStats");
-      client.getAlertConditionStats("Test");
+      Map<String, Boolean> stats = client.getAlertConditionStats("Test");
+      if (stats != null && !stats.isEmpty()) {
+        for (String statName : stats.keySet()) {
+          log.info(statName + " status is : " + stats.get(statName));
+        }
+      }
       log.info("testGetAlertConditionsStats completed successfully.");
     } catch (NewRelicNotFoundException e) {
       log.error("Error occurred while testing getAlertConditionStats. " + e.getMessage(), e);
@@ -43,6 +48,12 @@ public class NewRelicClientTest {
     try {
       log.info("Running testDisableAlertConditions");
       client.disableAlertConditions("Test");
+      Map<String, Boolean> stats = client.getAlertConditionStats("Test");
+      if (stats != null && !stats.isEmpty()) {
+        for (String statName : stats.keySet()) {
+          log.info(statName + " status is : " + stats.get(statName));
+        }
+      }
       log.info("testDisableAlertConditions completed successfully.");
     } catch (NewRelicNotFoundException e) {
       log.error("Error occurred while testing testDisableAlertConditions. " + e.getMessage(), e);
@@ -52,8 +63,19 @@ public class NewRelicClientTest {
   @Test
   public void testRestoreAlertConditionStates() {
     try {
-      log.info("Running testRestoreAlertConditionStates");
-      client.restoreAlertConditionStates("Test", getConditionStates());
+      log.info("Running testRestoreAlertConditionStates for Policy : Test");
+      Map<String, Boolean> states =  getConditionStates();
+      for (String syntheticName : states.keySet()) {
+        log.info(syntheticName + " condition status to be restored is : "
+            + states.get(syntheticName));
+      }
+      client.restoreAlertConditionStates("Test", states);
+      Map<String, Boolean> stats = client.getAlertConditionStats("Test");
+      if (stats != null && !stats.isEmpty()) {
+        for (String statName : stats.keySet()) {
+          log.info(statName + " status is : " + stats.get(statName));
+        }
+      }
       log.info("testRestoreAlertConditionStates completed successfully.");
     } catch (NewRelicNotFoundException e) {
       log.error("Error occurred while testing testRestoreAlertConditionStates. " + e.getMessage(),
@@ -65,7 +87,12 @@ public class NewRelicClientTest {
   public void testGetSyntheticStates() {
     try {
       log.info("Running testGetSyntheticStates");
-      client.getSyntheticStates();
+      Map<String, Boolean> states = client.getSyntheticStates();
+      if (states != null && !states.isEmpty()) {
+        for (String syntheticName : states.keySet()) {
+          log.info(syntheticName + " status to be restored is : " + states.get(syntheticName));
+        }
+      }
       log.info("testGetSyntheticStates completed successfully.");
     } catch (NewRelicNotFoundException e) {
       log.error("Error occurred while testing testGetSyntheticStates. " + e.getMessage(), e);
@@ -75,8 +102,14 @@ public class NewRelicClientTest {
   @Test
   public void testDisableSynthetic() {
     try {
-      log.info("Running testDisableSynthetic");
+      log.info("Running testDisableSynthetic : API Test");
       client.disableSynthetic("API Test");
+      Map<String, Boolean> states = client.getSyntheticStates();
+      if (states != null && !states.isEmpty()) {
+        for (String syntheticName : states.keySet()) {
+          log.info(syntheticName + " status to be restored is : " + states.get(syntheticName));
+        }
+      }
       log.info("testDisableSynthetic completed successfully.");
     } catch (NewRelicNotFoundException e) {
       log.error("Error occurred while testing testDisableSynthetic. " + e.getMessage(), e);
@@ -86,7 +119,21 @@ public class NewRelicClientTest {
   @Test
   public void testRestoreSyntheticStates() {
     log.info("Running testRestoreSyntheticStates");
-    client.restoreSyntheticStates(getSyntheticStates());
+    Map<String, Boolean> states = getSyntheticStates();
+    for (String syntheticName : states.keySet()) {
+      log.info(syntheticName + " status to be restored is : " + states.get(syntheticName));
+    }
+    client.restoreSyntheticStates(states);
+    try {
+      states = client.getSyntheticStates();
+    } catch (NewRelicNotFoundException e) {
+      log.error("Error occurred while testing testRestoreSyntheticStates. " + e.getMessage(), e);
+    }
+    if (states != null && !states.isEmpty()) {
+      for (String syntheticName : states.keySet()) {
+        log.info(syntheticName + " status is : " + states.get(syntheticName));
+      }
+    }
     log.info("testRestoreSyntheticStates completed successfully.");
   }
 
